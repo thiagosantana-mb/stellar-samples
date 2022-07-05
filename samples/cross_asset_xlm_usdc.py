@@ -5,6 +5,7 @@ from stellar_sdk import Asset, Keypair, Network, TransactionBuilder, Server, IdM
 
 
 MAX_AMOUNT = 500  # XLM
+USDC_MIN = 1
 
 
 def send_tx(cfg, key, fee, memo, destination, xlm_amount, usdc_amount):
@@ -67,12 +68,20 @@ def send_cross_asset(testnet):
     click.echo("https://stellar.expert/explorer/public/asset/"
                "USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN?filter=markets")
     xlm_amount = Decimal(click.prompt("XLM Amount"))
-    usdc_amount = Decimal(click.prompt("USDC Min Amount"))
-    fee = Decimal(click.prompt("Fee", default=100))
 
     if xlm_amount > MAX_AMOUNT:
-        click.echo(f"This script is not intended for any serious usage. Max amount: {MAX_AMOUNT} XLM")
-        exit(1)
+        click.get_current_context().fail(
+            f"This script is not intended for any serious usage. Max amount: {MAX_AMOUNT} XLM"
+        )
+
+    usdc_amount = Decimal(click.prompt("USDC Min Amount"))
+
+    if usdc_amount < USDC_MIN:
+        click.get_current_context().fail(f"USDC amount is too low. Min: {USDC_MIN}")
+
+    fee = Decimal(click.prompt("Fee", default=100))
+
+
 
     xlm_fee = fee / 10 ** 7
 
