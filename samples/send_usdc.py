@@ -4,11 +4,11 @@ import click
 from stellar_sdk import Asset, Keypair, Network, TransactionBuilder, Server, IdMemo
 
 
-MAX_AMOUNT = 500  # XLM
+MAX_AMOUNT = 100  # USDC
 USDC_MIN = 0.1
 
 
-def send_tx(cfg, key, fee, memo, destination, xlm_amount, usdc_amount):
+def _send_tx(cfg, key, fee, memo, destination, amount):
     horizon = cfg["horizon"]
     account = horizon.load_account(key.public_key)
     usdc = Asset("USDC", cfg["issuer"])
@@ -20,13 +20,10 @@ def send_tx(cfg, key, fee, memo, destination, xlm_amount, usdc_amount):
             base_fee=int(fee),
         )
         .add_memo(IdMemo(memo))
-        .append_path_payment_strict_send_op(
+        .append_payment_op(
             destination=destination,
-            send_asset=Asset.native(),
-            send_amount=str(xlm_amount),
-            dest_asset=usdc,
-            dest_min=str(usdc_amount),
-            path=[Asset.native(), usdc],
+            asset=usdc,
+            amount=amount,
         )
         .set_timeout(30)
         .build()
@@ -40,9 +37,9 @@ def send_tx(cfg, key, fee, memo, destination, xlm_amount, usdc_amount):
     return res['hash']
 
 
-@click.command(help="Send cross-asset XLM/USDC")
+@click.command(help="Send USDC TX")
 @click.option("--testnet", "-t", is_flag=True, help="Use testnet setup")
-def send_cross_asset(testnet):
+def send_usdc(testnet):
     if testnet:
         cfg = {
             "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
@@ -64,24 +61,17 @@ def send_cross_asset(testnet):
     click.echo(f"Account: {key.public_key}")
     destination = click.prompt("Destination account")
     memo = int(click.prompt("Memo"))
-    click.echo("See XLM/USDC prices")
-    click.echo("https://stellar.expert/explorer/public/asset/"
-               "USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN?filter=markets")
-    xlm_amount = Decimal(click.prompt("XLM Amount"))
+    amount = Decimal(click.prompt("Amount"))
 
-    if xlm_amount > MAX_AMOUNT:
+    if amount > MAX_AMOUNT:
         click.get_current_context().fail(
-            f"This script is not intended for any serious usage. Max amount: {MAX_AMOUNT} XLM"
+            f"This script is not intended for any serious usage. Max amount: {MAX_AMOUNT} USDC"
         )
 
-    usdc_amount = Decimal(click.prompt("USDC Min Amount"))
-
-    if usdc_amount < USDC_MIN:
+    if amount < USDC_MIN:
         click.get_current_context().fail(f"USDC amount is too low. Min: {USDC_MIN}")
 
     fee = Decimal(click.prompt("Fee", default=100))
-
-
 
     xlm_fee = fee / 10 ** 7
 
@@ -90,13 +80,12 @@ def send_cross_asset(testnet):
         from: {key.public_key},
         to: {destination},
         fee: {xlm_fee} XLM,
-        amount: {xlm_amount} XLM,
-        min amount: {usdc_amount} USDC
+        amount: {amount} USDC
     """)
 
     click.confirm("Can we sign and broadcast this TX?", default=False, abort=True)
 
-    tx_hash = send_tx(cfg, key, fee, memo, destination, xlm_amount, usdc_amount)
+    tx_hash = _send_tx(cfg, key, fee, memo, destination, amount)
 
     click.echo(f"TX sent: {tx_hash}")
     click.echo(f"{explorer_url}/{tx_hash}\n")
