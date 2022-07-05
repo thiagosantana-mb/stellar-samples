@@ -6,7 +6,7 @@ from samples.send_usdc import send_usdc
 from samples.change_trust import change_trust_usdc
 
 
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})

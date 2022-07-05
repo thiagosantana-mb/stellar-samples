@@ -79,6 +79,7 @@ def send_usdc(testnet):
         USDC issuer: {cfg['issuer']},
         from: {key.public_key},
         to: {destination},
+        memo: {memo},
         fee: {xlm_fee} XLM,
         amount: {amount} USDC
     """)
