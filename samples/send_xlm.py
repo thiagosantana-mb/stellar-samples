@@ -40,14 +40,12 @@ def _send_tx(cfg, key, fee, memo, destination, amount):
 def send_xlm(testnet):
     if testnet:
         cfg = {
-            "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
             "horizon": Server(horizon_url="https://horizon-testnet.stellar.org"),
             "network_passphrase": Network.TESTNET_NETWORK_PASSPHRASE,
         }
         explorer_url = "https://stellar.expert/explorer/testnet/tx"
     else:
         cfg = {
-            "issuer": "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
             "horizon": Server(horizon_url="https://horizon.stellar.org"),
             "network_passphrase": Network.PUBLIC_NETWORK_PASSPHRASE,
         }
