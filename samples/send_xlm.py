@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import click
 from stellar_sdk import Asset, Keypair, Network, TransactionBuilder, Server, IdMemo
+from stellar_sdk.exceptions import NotFoundError
 
 
 MAX_AMOUNT = 150  # XLM
@@ -9,21 +10,35 @@ XLM_MIN = 10
 
 
 def _send_tx(cfg, key, fee, memo, destination, amount):
+    create_account = False
     horizon = cfg["horizon"]
     account = horizon.load_account(key.public_key)
+
+    try:
+        horizon.load_account(destination)
+    except NotFoundError:
+        create_account = True
+
     builder = TransactionBuilder(
         source_account=account,
         network_passphrase=cfg["network_passphrase"],
         base_fee=int(fee),
-    ).append_payment_op(
-        destination=destination,
-        asset=Asset.native(),
-        amount=amount,
-    ).add_memo(IdMemo(memo))
+    )
+
+    if create_account:
+        builder.append_create_account_op(
+            destination=destination,
+            starting_balance=amount
+        )
+    else:
+        builder.append_payment_op(
+            destination=destination,
+            asset=Asset.native(),
+            amount=amount,
+        ).add_memo(IdMemo(memo))
 
     transaction = (
-        builder
-        .set_timeout(30)
+        builder.set_timeout(60)
         .build()
     )
 

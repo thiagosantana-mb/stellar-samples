@@ -16,6 +16,21 @@ def test_send_xlm(requests_mock):
     assert "https://stellar.expert/explorer/public/tx/myhash" in result.stdout
 
 
+def test_create_account(requests_mock):
+    key = Keypair.random()
+    requests_mock.get(f"https://horizon.stellar.org/accounts/{key.public_key}", [
+        {"json": {"sequence": 1}},
+        {"status_code": 404}
+    ])
+    requests_mock.post("https://horizon.stellar.org/transactions", json={"hash": "myhash"})
+    runner = CliRunner()
+    inputs = [key.secret, key.public_key, "1234", "10", "", "y"]
+    result = runner.invoke(cmds, ["send-xlm"], input="\n".join(inputs))
+
+    assert result.exit_code == 0
+    assert "https://stellar.expert/explorer/public/tx/myhash" in result.stdout
+
+
 def test_send_xlm_invalid_key():
     key = Keypair.random()
     runner = CliRunner()
